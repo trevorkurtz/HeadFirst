@@ -30,9 +30,9 @@ void bind_to_port(int socket, int port)
     name.sin_addr.s_addr = htonl(INADDR_ANY);
     int reuse = 1;
     if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, 
-        (char *)&reuse, sizof(int)) == -1)
+        (char *)&reuse, sizeof(int)) == -1)
         error("Can't set the reuse option on the socket");
-    int c = bind(socket, (stuct sockaddr *)&name, sizeof(name));
+    int c = bind(socket, (struct sockaddr *)&name, sizeof(name));
     if (c == -1)
         error("Can't bind to socket");
 }
@@ -98,31 +98,37 @@ int main()
     listener_d = open_listener_socket();
     bind_to_port(listener_d, port);
 
-    if (listen(listener_d, queue_depth) == -1);
+    if (listen(listener_d, queue_depth) == -1)
         error("Can't listen on port");
     
     struct sockaddr_storage client_addr;
     unsigned int address_size = sizeof(client_addr);
     puts("Waiting for connection");
     while (1) {
-        int connect_d = accept(listener_d, (struct sockaddr *)&client_addr, &address_size);
+        int connect_d = accept(listener_d, (struct sockaddr *)&client_addr, 
+                                &address_size);
         if (connect_d == -1)
             error("Can't open secondary socket.");
-
-        if (say(connect_d, "Knock! Knock!") != -1) {
-            read_in(connect_d, response, sizeof(response));
-            if(!strcasecmp(response, "Who's there?", 12))
-                say(connect_d, "You should say 'Who's there?'!");
-            else {
-                if(say(connect_d, "Oscar\r\n")!=-1){
-                    read_in(connect_d, response, sizeof(response));
-                    if(!strcasecmp("Oscar who?", response, 10))
-                        say(connect_d, "You should say 'Oscar who?'!");
-                    else
-                        say(connect_d, "Oscar silly question, you get a silly answer\r\n");
+        if (!fork())
+        {
+            // I'm in the child
+            close(listener_d);
+            if (say(connect_d, "Knock! Knock!") != -1) {
+                read_in(connect_d, response, sizeof(response));
+                if(!strncasecmp(response, "Who's there?", 12))
+                    say(connect_d, "You should say 'Who's there?'!");
+                else {
+                    if(say(connect_d, "Oscar\r\n")!=-1){
+                        read_in(connect_d, response, sizeof(response));
+                        if(!strncasecmp("Oscar who?", response, 10))
+                            say(connect_d, "You should say 'Oscar who?'!");
+                        else
+                            say(connect_d, "Oscar silly question, you get a silly answer\r\n");
+                    }
                 }
             }
-
+            close(connect_d);
+            exit(0);
         }
         close(connect_d);
     }
