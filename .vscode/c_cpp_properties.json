@@ -10,6 +10,7 @@
             },
             "includePath": [
                 "C:\\MinGW\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include",
+                "C:\\MinGW\\lib\\gcc\\x86_64-w64-mingw32\\7.3.0\\include\\ssp",
                 "${workspaceFolder}"
             ],
             "defines": [
